@@ -10,6 +10,7 @@ laser_gun = Weapon("laser_gun", 460, 180)
 sword = Weapon("sword", 125, 50)
 minigun = Weapon("minigun", 200, 60)
 magic_stick = Weapon("magic_stick", 45, 30)
+laser_scorts = Weapon('laser_scorts', 150, 85)
 
 allwep = [stick, tooth, scort, gun, boss_club, laser_gun, sword, minigun, magic_stick]
 
