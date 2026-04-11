@@ -8,6 +8,10 @@ class Weapon:
         self.damage = damage
     def __str__(self):
         return f'{self.name}, cost: {self.cost}, damage: {self.damage}'
+    
+    def return_info(self, discount):
+        return f'{self.name}, cost: {round(self.cost*discount)}, damage: {self.damage}'
+
 
 class Armour:
     def __init__(self, name, cost, defence):
@@ -16,6 +20,9 @@ class Armour:
         self.defence = defence
     def __str__(self):
         return f'{self.name}, cost: {self.cost}, defence: {self.defence}'
+    
+    def return_info(self, discount):
+        return f'{self.name}, cost: {round(self.cost*discount)}, defence: {self.defence}'
 
 class Character:
     def __init__(self, name, hp, weapon, armour):
@@ -177,16 +184,15 @@ class Dungeon:
         while True:
             choose = input('Choose your action: m - shop, n - inventory, b - next room: ')
             if choose == 'm':
-                print('Loading...')
-                time.sleep(randint(1, 4))
+                self.loading()
                 trader.trader_manager(hero)
+
             elif choose == 'n':
-                print('Loading...')
-                time.sleep(randint(1, 4))
+                self.loading()
                 hero.inventory_manager()
+
             elif choose == 'b':
-                print('Loading...')
-                time.sleep(randint(1, 4))
+                self.loading()
                 self.next_room(hero)
                 if not hero.is_alive():
                     break
@@ -201,6 +207,11 @@ class Dungeon:
     def next_room(self, hero):
         self.rooms[self.counter].enter_room(hero)
         self.counter += 1
+
+    def loading(self):
+        print('Loading...')
+        time.sleep(randint(1, 4))
+        print('----------------------------------------------------------------------------------------------------------------------------------------')
 
 
 
@@ -219,7 +230,7 @@ class Shop:
     def trader_manager(self, hero):
         print(f"You have entered the {self.name}'s shop. Your ballance is {hero.ballance}.")
         while True:
-            choose = input('Choose your action: o - buy, p - sell, l - exit, k - buy discount (cost 450, discount; -10%): ')
+            choose = input('Choose your action: o - buy, p - sell, l - exit, k - buy discount (cost 450, discount -10%): ')
             if choose == 'o':
                 self.buy_item(hero)
             elif choose == 'p':
@@ -231,9 +242,9 @@ class Shop:
             elif choose == 'f':
                 self.show_trader_inventory()
             elif choose == 'k':
-                self.get_discount()
+                self.get_discount(hero)
 
-            if choose =='w':
+            elif choose =='w':
                 print('Loading...')
                 time.sleep(randint(1, 4))
                 self.codes(hero)
@@ -245,29 +256,32 @@ class Shop:
         self.show_trader_inventory()
         print("...And you may buy potion (cost: 100, hill: 80 HP) (a) and chest (cost: 450 and random thing (money, HP, weapon, armour)) (s).")
         print('(l - exit).')
-        choose = int(input(f'Print your choose: number from 1 to {len(self.trader_inventory)}: '))
-        if choose < len(self.trader_inventory) + 1 and choose > 0:
+        choose = input(f'Print your choose: number from 1 to {len(self.trader_inventory)}: ')
+        
+        if choose == 'a':
+            if hero.ballance >= self.trader_inventory[choose - 1].cost:
+                hero.ballance = hero.ballance - 100
+                hero.hp = hero.hp + 80
+            else:
+                print("Sorry, you don't have enough money.")
+        
+        elif choose == 's':
+            self.chest_manager()
+
+        elif choose =='l':
+            return
+        
+        elif int(choose) < len(self.trader_inventory) + 1 and int(choose) > 0:
+            choose = int(choose)
             if hero.ballance >= self.trader_inventory[choose - 1].cost:
                 item = self.trader_inventory.pop(choose - 1)
                 hero.ballance = hero.ballance - item.cost*self.discount
                 self.money = self.money + item.cost
                 hero.inventory.append(item)
                 hero.show_hero_inventory()
-
             else:
                 print("Sorry, you don't have enough money.")
-        elif choose == 'a':
-            if hero.ballance >= self.trader_inventory[choose - 1].cost:
-                hero.ballance = hero.ballance - 100
-                hero.hp = hero.hp + 80
 
-            else:
-                print("Sorry, you don't have enough money.")
-        
-        elif choose == 's':
-            self.chest_manager()
-        elif choose =='l':
-            return
         else:
             print('No! Try again')
 
@@ -289,7 +303,7 @@ class Shop:
 
     def show_trader_inventory(self):
         for i in range(len(self.trader_inventory)):
-            print(f'{i + 1}. {self.trader_inventory[i]}')
+            print(f'{i + 1}. {self.trader_inventory[i].return_info(self.discount)}')
 
     def chest_manager(self, hero):
         proc = randint(1, 4)
@@ -354,39 +368,49 @@ class Shop:
                 print('NO!')
                 print('NO! I WONT GIVE YOU GOLD ARMOUR AGAIN!')
         elif choose == 'NFC':
-            if choose == 'Dark wolf 17':
-                if self.df17 == 0:
-                    self.discount = round((self.discount - 0.1), 1)
-                    ds = round((1 - self.discount) * 100)
-                    print(f'YOU GET DISCOUNT... NOW YOUR DISCOUNT IS {ds}%!')
-                    self.df17 = 1
-                else:
-                    print('NO!')
-                    time.sleep(0.5)
-                    print('NO!')
-                    time.sleep(0.2)
-                    print('NO!')
-                    time.sleep(0.2)
-                    print('NO!')
-                    time.sleep(0.1)
-                    print('NO!')
-                    time.sleep(0.1)
-                    print('NO!')
-                    print('NO!')
-                    print('NO! I WONT GIVE YOU DISCOUNT AGAIN!')
+            if self.n == 0:
+                self.discount = round((self.discount - 0.1), 1)
+                ds = round((1 - self.discount) * 100)
+                print(f'YOU GET DISCOUNT... NOW YOUR DISCOUNT IS {ds}%!')
+                self.n = 1
+            else:
+                print('NO!')
+                time.sleep(0.5)
+                print('NO!')
+                time.sleep(0.2)
+                print('NO!')
+                time.sleep(0.2)
+                print('NO!')
+                time.sleep(0.1)
+                print('NO!')
+                time.sleep(0.1)
+                print('NO!')
+                print('NO!')
+                print('NO! I WONT GIVE YOU DISCOUNT AGAIN!')
         else:
             print('INCORRECT! GO OUT!')
+            time.sleep(1)
             return
 
 
     def get_discount(self, hero):
         if not self.discount == 0.1:
-            if hero.ballance >= 450:
-                self.discount = round((self.discount - 0.1), 1)
-                ds = round((1 - self.discount) * 100)
-                print(f'You get discount! Now your discount is {ds}%.')
-                hero.ballance -= 450
+            disc_cost = 450 + (450 / 100 *((1 - self.discount) * 100))
+            answer = input(f'You are buy discount. Cost: {disc_cost}. Are you want duy it? (z - yes, x - no): ')
+            if answer == 'z':
+                if hero.ballance >= disc_cost:
+                    self.discount = round((self.discount - 0.1), 1)
+                    ds = round((1 - self.discount) * 100)
+                    print(f'You get discount! Now your discount is {ds}%.')
+                    hero.ballance -= 450
+                else:
+                    print("Sorry, you don't have enough money.")
             else:
-                print("Sorry, you don't have enough money.")
+                return
+
         else:
             print('You have max discount.')
+
+
+
+#реализовать, чтобы цена товаров менялась от скидки 04.04.2026 -> 11.04.2026
