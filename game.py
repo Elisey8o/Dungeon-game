@@ -5,12 +5,12 @@ stick = Weapon("stick", 15, 5)
 tooth = Weapon("tooth", 40, 15)
 scort = Weapon("scort", 75, 30)
 gun = Weapon("gun", 250, 75)
-boss_club = Weapon("boss_club", 0, 160)
-laser_gun = Weapon("laser_gun", 460, 180)
+boss_club = Weapon("boss_club", 0, 80)
+laser_gun = Weapon("laser_gun", 460, 75)
 sword = Weapon("sword", 125, 50)
 minigun = Weapon("minigun", 200, 60)
 magic_stick = Weapon("magic_stick", 45, 30)
-laser_scorts = Weapon('laser_scorts', 150, 85)
+laser_scorts = Weapon('laser_scorts', 150, 70)
 
 allwep = [stick, tooth, scort, gun, boss_club, laser_gun, sword, minigun, magic_stick]
 
@@ -24,21 +24,23 @@ magicarmour = Armour('magicarmour', 500, 600)
 
 allar = [leatherArmour, ironArmour, diamond_armour, diamond_armour_x2, goldArmour, magicarmour]
 
-goblin = Enemy("goblin", 320, scort, ironArmour, 60, 80)
-giantСockroach = Enemy("giantСockroach", 550, minigun, goldArmour, 81, 140)
-hero = Hero("clever Ivan", 100, stick, no_armour, 0, 0, 100)
-dumb_Ivan = Enemy("dumb_Ivan", 20, stick, no_armour, 10, 10)
-big_rat = Enemy("big_rat", 30, tooth, no_armour, 18, 20)
-skelleton = Enemy("skelleton", 180, laser_gun, diamond_armour, 35, 50)
-boss_skelleton = Enemy('boss_skelleton', 800, boss_club, diamond_armour_x2, 150, 200)
-mouse = Enemy('mouse', 25, minigun, no_armour, 11, 50)
-trader = Shop("Vilam", [sword, goldArmour, gun, laser_gun, minigun], 400, allwep, allar)
+goblin = Enemy("goblin", 200, scort, ironArmour, 60, 80)
+giantСockroach = Enemy("giantСockroach", 450, minigun, goldArmour, 81, 140)
+
+hero = Hero("clever Ivan", 1000, stick, no_armour, 50, 0, 1000)
+
+dumb_Ivan = Enemy("dumb_Ivan", 25, stick, no_armour, 10, 10)
+big_rat = Enemy("big_rat", 45, tooth, no_armour, 18, 20)
+skelleton = Enemy("skelleton", 300, laser_gun, diamond_armour, 35, 50)
+boss_skelleton = Enemy('boss_skelleton', 700, boss_club, diamond_armour_x2, 150, 200)
+mouse = Enemy('mouse', 40, minigun, no_armour, 11, 50)
+trader = Shop("Vilam", [sword, goldArmour, gun, laser_gun, minigun, leatherArmour, magic_stick, diamond_armour, ironArmour], 400, allwep, allar)
 
 room_1 = Room(1, dumb_Ivan)
 room_2 = Room(2, big_rat)
-room_3 = Room(3, skelleton)
+room_3 = Room(3, mouse)
 room_4 = Room(4, goblin)
-room_5 = Room(5, mouse)
+room_5 = Room(5, skelleton)
 room_6 = Room(6, giantСockroach)
 room_7 = Room(6, boss_skelleton)
 
@@ -47,7 +49,8 @@ room_7 = Room(6, boss_skelleton)
 
 rooms_d1 = [room_1, room_2, room_3]
 dungeon_1 = Dungeon(rooms_d1, 'rat_dungeon')
-dungeon_1.dungeon_manager(hero, trader)
+hero = dungeon_1.dungeon_manager(hero, trader)
+
 rooms_d2 = [room_4, room_5, room_6, room_7]
-dungeon_2 = Dungeon(rooms_d1, 'skelleton_dungeon')
+dungeon_2 = Dungeon(rooms_d2, 'skelleton_dungeon')
 dungeon_2.dungeon_manager(hero, trader)

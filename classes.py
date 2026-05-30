@@ -1,5 +1,7 @@
 from random import randint, choice
 import time
+import json
+import os
 
 class Weapon:
     def __init__(self, name, cost, damage):
@@ -25,7 +27,7 @@ class Armour:
         return f'{self.name}, cost: {round(self.cost*discount)}, defence: {self.defence}'
 
 class Character:
-    def __init__(self, name, hp, weapon, armour):
+    def __init__(self, name, hp, weapon: Weapon, armour: Armour):
         self.name = name
         self.hp = hp
         self.weapon = weapon
@@ -36,6 +38,13 @@ class Character:
             return False
         else:
             return True
+        
+    def deal_damage(self, enemy):
+        ar_d = self.weapon.damage
+        if enemy.armour.defence > self.weapon.damage:
+            ar_d = 0
+        enemy.hp = enemy.hp - ar_d
+        print(f"{self.name} dealt {self.weapon.damage} damage to {enemy.name}. He has {enemy.hp} HP left.")
 
 class Enemy(Character):
     def __init__(self, name, hp, weapon, armour, scoreP, money):
@@ -47,7 +56,7 @@ class Hero(Character):
     def __init__(self, name, hp, weapon, armour, ballance, score, max_hp):
         super().__init__(name, hp, weapon, armour)
         self.ballance = ballance
-        self.score = score
+        self.score = 0
         self.inventory = []
         self.max_hp = max_hp
     
@@ -63,13 +72,15 @@ class Hero(Character):
     def inventory_manager(self):
         self.show_hero_inventory()
         while True:
-            answer = input("What do you want? (a - change item, x - exit): ")
+            answer = input("What do you want? (a - change item, x - exit, q - show_stats): ")
             if answer == 'a':
                 self.change_item()
-            if answer == 'x':
+            elif answer == 'x':
                 print('Loading...')
                 time.sleep(randint(1, 4))
                 break
+            elif answer == 'q':
+                self.show_stats()
             else:
                 pass
 
@@ -90,9 +101,12 @@ class Hero(Character):
             self.inventory.append(self.armour)
             self.armour = self.inventory[int(answer) - 1]
 
+    def show_stats(self):
+        print(f'Your statistics: money ({self.ballance}), HP ({self.hp}), armour ({self.armour}), weapon ({self.weapon}).')
+
         
 class Room:
-    def __init__(self, id, enemy):
+    def __init__(self, id, enemy: Enemy):
         self.id = id
         self.enemy = enemy
 
@@ -100,12 +114,11 @@ class Room:
         print(f"You are entered the room {self.id}. There is enemy {self.enemy.name}.")
         self.start_fight(hero)
 
-    def start_fight(self, hero):
+    def start_fight(self, hero: Hero):
         while self.enemy.is_alive():    
             action = input(f"Choose your action: a - attac, s - drink potion (cost: 150, hill: 70 HP, your ballance: {hero.ballance}): ")
             if action == "a":
-                self.enemy.hp = self.enemy.hp - hero.weapon.damage
-                print(f"You dealt {hero.weapon.damage} damage to an enemy slime.{self.enemy.name} has {self.enemy.hp} HP left.")
+                hero.deal_damage(self.enemy)
             elif action == "s":
                 if hero.ballance >= 120 and hero.hp < hero.max_hp:
                     hero.hp += 70
@@ -117,8 +130,7 @@ class Room:
                     print('NO! You dont need it!')
             else:
                 print('Sorry, you are input incorrect action. Try again!')
-            hero.hp = hero.hp - self.enemy.weapon.damage
-            print(f"{self.enemy.name} dealt {self.enemy.weapon.damage} damage to you. You have {hero.hp} HP left.")
+            self.enemy.deal_damage(hero)
 
             if not hero.is_alive():
                 answer = 0
@@ -145,6 +157,7 @@ class Room:
 
         if self.enemy.hp < 1:
             print(f"You are won and you have {hero.hp} hp left.")
+            hero.score += self.enemy.scoreP
 
     def get_loot(self, hero):
         loot_procent = randint(1, 100)
@@ -178,11 +191,13 @@ class Dungeon:
         self.rooms = rooms
         self.counter = 0
         self.name = name
+        self.time = 0
 
     def dungeon_manager(self, hero, trader):
+        t1 = time.time()
         print(f'You have entered the {self.name}.')
-        while True:
-            choose = input('Choose your action: m - shop, n - inventory, b - next room: ')
+        while hero.is_alive():
+            choose = input('Choose your action: m - shop, n - inventory, b - next room: , v - save, c - load: ')
             if choose == 'm':
                 self.loading()
                 trader.trader_manager(hero)
@@ -194,15 +209,27 @@ class Dungeon:
             elif choose == 'b':
                 self.loading()
                 self.next_room(hero)
-                if not hero.is_alive():
-                    break
                 self.rooms[self.counter - 1].get_loot(hero)    
                 if self.counter == len(self.rooms):
-                    print(f'You competed {self.name}.')
-                    time.sleep(randint(1, 4))
                     break
+
+            elif choose == 'v':
+                self.save(hero)
+            elif choose =='c':
+                hero = self.load()
             else:
                 print('Sorry, you are input incorrect action. Try again!')
+
+        if not hero.is_alive:
+            print('You didnt complete dungeon.')
+        else:
+            print(f'You competed {self.name}.')
+            t2 = time.time()
+            self.time += (t2 - t1)
+            self.score_plus(hero)
+            print(f'Your time is {round(self.time, 1)}, score is {hero.score}')
+            time.sleep(randint(1, 4))
+            return hero
 
     def next_room(self, hero):
         self.rooms[self.counter].enter_room(hero)
@@ -211,8 +238,57 @@ class Dungeon:
     def loading(self):
         print('Loading...')
         time.sleep(randint(1, 4))
-        print('----------------------------------------------------------------------------------------------------------------------------------------')
+        print()
 
+    def score_plus(self, hero: Hero):
+        max_p = 650
+        hsp = max_p - self.time
+        if self.time <= 300:  
+            hsp * 4
+            print('Your rang: P')
+        if self.time > 300 and self.time < 400:  
+            hsp * 3
+            print('Your rang: S')
+        if self.time > 400 and self.time < 600:  
+            hsp * 2
+            print('Your rang: C')
+        if self.time > 600:  
+            hsp * 1
+            print('Your rang: B')
+
+        hero.score += round(hsp)
+
+    def save(self, hero: Hero):
+        hero_save = {
+            'name': hero.name,
+            'hp': hero.hp,
+            'score': hero.score,
+            'ballance': hero.ballance,
+            'inventory': [],
+            'weapon': {'name': hero.weapon.name, 'cost': hero.weapon.cost, 'damage': hero.weapon.damage},
+            'armour': {'name': hero.armour.name, 'cost': hero.armour.cost, 'defence': hero.armour.defence},
+            'max_hp': hero.max_hp
+        }
+        with open("save.json", 'w', encoding="utf-8") as file:
+            json.dump(hero_save, file, ensure_ascii=False, indent=4)
+        print('Progress is save!')
+        print()
+
+    def load(self):
+        with open("save.json", 'r', encoding="utf-8") as file:
+            hero_load = json.load(file)
+        print(hero_load)
+        weapon = Weapon(hero_load['weapon']['name'], hero_load['weapon']['cost'], hero_load['weapon']['damage'])
+        armour = Armour(hero_load['armour']['name'], hero_load['armour']['cost'], hero_load['armour']['defence'])
+        hero = Hero(hero_load['name'],
+                     hero_load['hp'],
+                     weapon, armour,
+                     hero_load['ballance'],
+                     hero_load['score'],
+                     hero_load['max_hp']
+                     )
+        return hero
+    
 
 
 class Shop:
@@ -287,7 +363,13 @@ class Shop:
 
     def sell_item(self, hero): 
         hero.show_hero_inventory()
-        choose = int(input(f'Print your choose: number from 1 to {len(hero.inventory)}: '))
+
+        try:
+            choose = int(input(f'Print your choose: number from 1 to {len(hero.inventory)}: '))
+        except:
+            print('The purchase did not take place.')
+            return
+        
         if choose < len(hero.inventory) + 1 and choose > 0:
             if self.money >= hero.inventory[choose - 1].cost:
                 item = hero.inventory.pop(choose - 1)
@@ -414,3 +496,6 @@ class Shop:
 
 
 #реализовать, чтобы цена товаров менялась от скидки 04.04.2026 -> 11.04.2026
+#18.04.2026 -> 25.04.2026 проверить, работает ли игра. добавить концовки. реализовать добавление очков.
+#02/05/2026 -> 09/05/2026 проверить очки и добавить концовки, подправить ошибки ввода
+# добавить сохранение
